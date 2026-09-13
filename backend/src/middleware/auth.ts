@@ -2,7 +2,21 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { db } from '../config/database.js';
 
-export const JWT_SECRET = process.env.JWT_SECRET || 'optics-shop-manager-super-secret-key-2026';
+const isProduction = process.env.NODE_ENV === 'production';
+
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (isProduction) {
+      console.error('FATAL: JWT_SECRET environment variable is required in production mode. Refusing to start.');
+      process.exit(1);
+    }
+    return 'dev-only-optics-shop-manager-secret-key-do-not-use-in-production';
+  }
+  return secret;
+}
+
+export const JWT_SECRET = getJwtSecret();
 
 export interface AuthenticatedUser {
   id: string;

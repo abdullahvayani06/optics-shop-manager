@@ -24,9 +24,35 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const isProduction = process.env.NODE_ENV === 'production';
+const corsOriginEnv = process.env.CORS_ORIGIN;
+
+if (isProduction && !corsOriginEnv) {
+  console.error('FATAL: CORS_ORIGIN environment variable is required in production mode. Refusing to start.');
+  process.exit(1);
+}
+
+// In production, split comma-separated origins if provided (normalizing trailing slashes)
+const allowedOrigins = corsOriginEnv
+  ? corsOriginEnv.split(',').map(o => o.trim().replace(/\/$/, '')).filter(Boolean)
+  : '*';
+
 // Middleware
 app.use(cors({
-  origin: '*',
+  origin: (origin, callback) => {
+    // Allow non-browser requests (tools, curl, server-to-server) where origin is undefined
+    if (!origin) {
+      return callback(null, true);
+    }
+    if (!isProduction || allowedOrigins === '*') {
+      return callback(null, true);
+    }
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    if (Array.isArray(allowedOrigins) && (allowedOrigins.includes(normalizedOrigin) || allowedOrigins.includes('*'))) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS policy violation: Origin ${origin} not allowed.`));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -73,8 +99,16 @@ if (fs.existsSync(frontendDist)) {
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled server error:', err);
-  res.status(500).json({ error: 'Internal server error: ' + (err.message || 'Unknown error') });
+  // Always log complete error details on server side
+  console.error(`[${new Date().toISOString()}] Unhandled server error:`, err);
+
+  if (isProduction) {
+    // Production clients receive a generic error message
+    res.status(500).json({ error: 'Internal server error' });
+  } else {
+    // Development mode provides full exception message for debugging
+    res.status(500).json({ error: 'Internal server error: ' + (err.message || 'Unknown error') });
+  }
 });
 
 app.listen(PORT, () => {

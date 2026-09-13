@@ -2,12 +2,15 @@
   "name": "optics-shop-backend",
   "version": "1.0.0",
   "description": "Backend API for Optics Shop Manager",
-  "main": "src/server.ts",
+  "main": "dist/server.js",
   "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "tsx src/server.ts"
+    "start": "node dist/server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

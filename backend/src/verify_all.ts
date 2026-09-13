@@ -39,6 +39,8 @@ async function runVerification() {
     }
   }
 
+  const todayStr = new Date().toISOString().substring(0, 10);
+
   // 1. Authentication & Role Verification
   console.log('--- 1. Testing Auth & Role-Based Access Guards ---');
   const ownerLogin = await testApi('/auth/login', {
@@ -105,7 +107,7 @@ async function runVerification() {
       left_add: '+1.50',
       pupillary_distance: '63',
       prescribing_doctor: 'Dr. Munir Ahmed (Lahore General Hospital)',
-      test_date: '2026-09-12',
+      test_date: todayStr,
       remarks: 'Blue-cut coating advised',
     }),
   });
@@ -139,7 +141,7 @@ async function runVerification() {
     headers: { Authorization: `Bearer ${ownerToken}` },
     body: JSON.stringify({
       customer_id: testCustomerId,
-      sale_date: '2026-09-12',
+      sale_date: todayStr,
       items: [{ product_id: testProductId, quantity: 15, unit_price: 8000, discount: 0 }],
       discount: 0,
       initial_payment: 0,
@@ -156,7 +158,7 @@ async function runVerification() {
     headers: { Authorization: `Bearer ${ownerToken}` },
     body: JSON.stringify({
       customer_id: testCustomerId,
-      sale_date: '2026-09-12',
+      sale_date: todayStr,
       items: [{ product_id: testProductId, quantity: 2, unit_price: 8000, discount: 0 }],
       overall_discount: 0,
       amount_received: 6000,
@@ -181,7 +183,7 @@ async function runVerification() {
       category: 'Packaging',
       amount: 1000,
       description: 'Test optical protective cases',
-      date: '2026-09-12',
+      date: todayStr,
       payment_method: 'Cash',
     }),
   });
@@ -190,7 +192,7 @@ async function runVerification() {
 
   // Step C: Verify Financial Accounting before cancellation
   // Net Profit must be: Gross Profit (6,000) - Expense (1,000) = 5,000
-  const financeBeforeCancel = await testApi('/finance/overview?period=today&date_from=2026-09-12&date_to=2026-09-12', {
+  const financeBeforeCancel = await testApi(`/finance/overview?period=today&date_from=${todayStr}&date_to=${todayStr}`, {
     headers: { Authorization: `Bearer ${ownerToken}` },
   });
   const f1 = financeBeforeCancel.data.metrics || {};
@@ -207,7 +209,7 @@ async function runVerification() {
       sale_id: saleId,
       amount: 15000,
       payment_method: 'Cash',
-      payment_date: '2026-09-12',
+      payment_date: todayStr,
       notes: 'Excess payment attempt',
     }),
   });
@@ -221,7 +223,7 @@ async function runVerification() {
       sale_id: saleId,
       amount: 4000,
       payment_method: 'Bank Transfer',
-      payment_date: '2026-09-12',
+      payment_date: todayStr,
       notes: 'Second installment via bank',
     }),
   });
@@ -250,7 +252,7 @@ async function runVerification() {
       sale_id: saleId,
       amount: 1000,
       payment_method: 'Cash',
-      payment_date: '2026-09-12',
+      payment_date: todayStr,
       notes: 'Payment attempt on cancelled sale',
     }),
   });
@@ -259,7 +261,7 @@ async function runVerification() {
   // Step F: Verify Financials strictly exclude cancelled sale
   // Section 16 rule: Cancelled sale excluded from Revenue, COGS, Gross Profit.
   // Net Profit must reflect only the expense: 0 - 1000 = -1000.
-  const salesReportAfter = await testApi('/reports/sales?period=today&date_from=2026-09-12&date_to=2026-09-12', {
+  const salesReportAfter = await testApi(`/reports/sales?period=today&date_from=${todayStr}&date_to=${todayStr}`, {
     headers: { Authorization: `Bearer ${ownerToken}` },
   });
   assert(salesReportAfter.data.summary.cancelled_sales_count >= 1, 'Sales report tracks Cancelled Sales count separately');
@@ -281,7 +283,7 @@ async function runVerification() {
     method: 'POST',
     headers: { Authorization: `Bearer ${ownerToken}` },
     body: JSON.stringify({
-      date: '2026-09-12',
+      date: todayStr,
       amount: 250000,
       investment_type: 'Owner Contribution',
       description: 'New edger machine investment',

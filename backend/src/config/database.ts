@@ -6,12 +6,17 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dataDir = path.resolve(__dirname, '../../data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+const defaultDataDir = path.resolve(__dirname, '../../data');
+const dbPath = process.env.DATABASE_PATH
+  ? path.resolve(process.env.DATABASE_PATH)
+  : path.join(defaultDataDir, 'optics.db');
+
+// Ensure parent directory exists before opening database
+const parentDir = path.dirname(dbPath);
+if (!fs.existsSync(parentDir)) {
+  fs.mkdirSync(parentDir, { recursive: true });
 }
 
-const dbPath = path.join(dataDir, 'optics.db');
 export const db = new DatabaseSync(dbPath);
 
 // Enable foreign keys
