@@ -78,6 +78,41 @@ Open `http://localhost:3000` in your browser.
 
 ---
 
+## Cloud Deployment Guide
+
+### Deploying to Vercel (Frontend) via GitHub
+
+1. **Push your code to GitHub**:
+   ```powershell
+   git remote add origin https://github.com/<your-username>/<your-repo-name>.git
+   git branch -M main
+   git push -u origin main
+   ```
+
+2. **Deploy on Vercel**:
+   - Go to [vercel.com](https://vercel.com) and click **Add New Project** $\to$ **Project**.
+   - Select your GitHub repository.
+   - In **Root Directory**, click edit and select **`frontend`**.
+   - Framework Preset will auto-detect as **Vite**.
+   - Under **Environment Variables**, add:
+     - `VITE_API_URL`: URL of your deployed backend API (e.g. `https://your-backend.onrender.com/api` or leave empty if testing frontend UI only).
+   - Click **Deploy**.
+   - Your frontend will be live on `https://<project-name>.vercel.app` with instant global CDN and automatic CI/CD on every push.
+
+### Deploying the Backend API (Render / Railway)
+
+Because Vercel is a serverless frontend platform without a persistent file system, SQLite databases (`.db` files) cannot persist on Vercel. 
+
+To host the backend API:
+1. Go to [Render.com](https://render.com) (free) or [Railway.app](https://railway.app).
+2. Connect your GitHub repository.
+3. Select **Root Directory**: `backend`.
+4. Build Command: `npm install && npm run build`
+5. Start Command: `npm start`
+6. Copy your live backend URL (e.g., `https://optics-api.onrender.com`) and paste it into your Vercel project's `VITE_API_URL` environment variable.
+
+---
+
 ## PostgreSQL / Supabase Migration
 
 A complete PostgreSQL migration file is included at:
@@ -87,3 +122,4 @@ It includes:
 - PostgreSQL DDL matching all tables
 - Security-definer `has_role()` function
 - Row Level Security (RLS) policies for Owner and Staff
+
