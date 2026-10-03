@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { initDatabase } from './config/database.js';
 import { seedDatabase } from './seed/seedData.js';
 import { authRouter } from './routes/auth.js';
@@ -56,7 +58,24 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Security HTTP headers
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
+
 app.use(express.json());
+
+// API Rate Limiter: max 1000 requests per 15 minutes per IP
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many API requests from this IP. Please try again after 15 minutes.' }
+});
+app.use('/api', apiLimiter);
 
 // Initialize SQLite database and seed demo data if empty
 initDatabase();

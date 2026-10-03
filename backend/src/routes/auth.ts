@@ -1,13 +1,23 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
 import { db } from '../config/database.js';
 import { authenticate, JWT_SECRET } from '../middleware/auth.js';
 
 export const authRouter = Router();
 
+// Rate limiter for login endpoint to prevent brute-force attacks
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 15, // Limit each IP to 15 login attempts per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts. Please try again after 15 minutes.' }
+});
+
 // Public login endpoint
-authRouter.post('/login', (req, res) => {
+authRouter.post('/login', loginLimiter, (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -20,7 +30,7 @@ authRouter.post('/login', (req, res) => {
     SELECT p.id, p.full_name, p.email, p.phone, p.avatar_url, p.password_hash, ur.role
     FROM profiles p
     JOIN user_roles ur ON p.id = ur.user_id
-    WHERE LOWER(p.email) = ?
+    WHERE LOWER(p.email) = ? AND p.active = 1
   `).get(normalizedEmail) as any;
 
   if (!user) {
@@ -35,7 +45,7 @@ authRouter.post('/login', (req, res) => {
   const token = jwt.sign(
     { id: user.id, email: user.email, role: user.role },
     JWT_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: (process.env.JWT_EXPIRES_IN || '24h') as any }
   );
 
   return res.json({
