@@ -48,7 +48,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
       SELECT p.id, p.full_name, p.email, ur.role
       FROM profiles p
       JOIN user_roles ur ON p.id = ur.user_id
-      WHERE p.id = ?
+      WHERE p.id = ? AND p.active = 1
     `).get(decoded.id) as AuthenticatedUser | undefined;
 
     if (!user) {

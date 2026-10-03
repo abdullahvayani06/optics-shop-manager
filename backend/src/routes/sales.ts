@@ -156,10 +156,21 @@ salesRouter.get('/:id', (req, res) => {
     return res.status(404).json({ error: 'Sale not found.' });
   }
 
+  const isOwner = req.user?.role === 'owner';
+  const costColumn = isOwner ? 'si.cost_price' : 'NULL AS cost_price';
+
   // Fetch items
   const items = db.prepare(`
     SELECT 
-      si.*,
+      si.id,
+      si.sale_id,
+      si.product_id,
+      si.quantity,
+      si.unit_price,
+      si.discount,
+      si.subtotal,
+      ${costColumn},
+      si.created_at,
       p.brand,
       p.model,
       p.sku,
